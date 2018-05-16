@@ -37,7 +37,7 @@
     self.mapDelegate.hideStaticLayers = YES;
     
     __weak __typeof__(self) weakSelf = self;
-    [self.mapDelegate setObservations:observations withCompletion:^{
+    [self.mapDelegate setObservations:observations withAnimation: NO withCompletion:^{
         MapObservation *mapObservation = [weakSelf.mapDelegate.mapObservations observationOfId:observation.objectID];
         MKCoordinateRegion viewRegion = [mapObservation viewRegionOfMapView:weakSelf.mapView];
         dispatch_sync(dispatch_get_main_queue(), ^{

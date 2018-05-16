@@ -52,7 +52,9 @@
 
 @end
 
-@implementation MapViewController
+@implementation MapViewController {
+    BOOL dropPins;
+}
 
 - (IBAction)mapLongPress:(id)sender {
     UIGestureRecognizer *gestureRecognizer = (UIGestureRecognizer *)sender;
@@ -79,7 +81,7 @@
 
 - (void) viewDidLoad {
     [super viewDidLoad];
-    
+    dropPins = YES;
     [self registerForThemeChanges];
     
     if (@available(iOS 11.0, *)) {
@@ -134,7 +136,7 @@
         }
     } else {
         Observations *observations = [Observations observationsForMap];
-        [self.mapDelegate setObservations:observations];
+        [self.mapDelegate setObservations:observations withAnimation: dropPins];
     }
     
     NSUserDefaults *defaults = [NSUserDefaults standardUserDefaults];
@@ -217,7 +219,7 @@
                                                object:nil];
     
     [self onLocationAuthorizationStatus:[CLLocationManager authorizationStatus]];
-    
+    dropPins = NO;
 }
 
 - (BOOL)isForceTouchAvailable {

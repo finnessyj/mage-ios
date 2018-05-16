@@ -315,7 +315,7 @@
     [self updateLocations:[self.locations.fetchedResultsController fetchedObjects]];
 }
 
-- (void) setObservations:(Observations *)observations withCompletion: (void (^)(void)) complete {
+- (void) setObservations:(Observations *)observations withAnimation: (BOOL) animation withCompletion: (void (^)(void)) complete {
     _observations = observations;
     if (!_observations) return;
     _observations.delegate = self;
@@ -345,9 +345,9 @@
         }
         
         if (weakSelf.hideObservations) {
-            [weakSelf updateObservations:[((Observations *)[Observations hideObservations]).fetchedResultsController fetchedObjects]];
+            [weakSelf updateObservations:[((Observations *)[Observations hideObservations]).fetchedResultsController fetchedObjects] withAnimation: animation];
         } else {
-            [weakSelf updateObservations:[weakSelf.observations.fetchedResultsController fetchedObjects]];
+            [weakSelf updateObservations:[weakSelf.observations.fetchedResultsController fetchedObjects] withAnimation: animation];
         }
         complete();
     });
@@ -360,13 +360,19 @@
         __weak typeof(self) weakSelf = self;
         dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul);
         dispatch_async(queue, ^{
-            [weakSelf updateObservations:[weakSelf.observations.fetchedResultsController fetchedObjects]];
+            [weakSelf updateObservations:[weakSelf.observations.fetchedResultsController fetchedObjects] withAnimation:NO];
         });
     }
 }
 
 - (void) setObservations:(Observations *)observations {
-    [self setObservations:observations withCompletion:^{
+    [self setObservations:observations withAnimation: NO withCompletion:^{
+        
+    }];
+}
+
+- (void) setObservations:(Observations *)observations withAnimation: (BOOL) animation {
+    [self setObservations:observations withAnimation: animation withCompletion:^{
         
     }];
 }
@@ -394,7 +400,7 @@
     __weak typeof(self) weakSelf = self;
     dispatch_queue_t queue = dispatch_get_global_queue(DISPATCH_QUEUE_PRIORITY_DEFAULT, 0ul);
     dispatch_async(queue, ^{
-        [weakSelf updateObservations:newObservations];
+        [weakSelf updateObservations:newObservations withAnimation:NO];
     });
 }
 
@@ -1230,12 +1236,12 @@
     }
 }
 
-- (void) updateObservations:(NSArray *)observations {
+- (void) updateObservations:(NSArray *)observations withAnimation: (BOOL) animation {
     __weak typeof(self) weakSelf = self;
 
     for (Observation *observation in observations) {
         dispatch_sync(dispatch_get_main_queue(), ^{
-            [weakSelf updateObservation: observation withAnimation:NO];
+            [weakSelf updateObservation: observation withAnimation:animation];
         });
     }
 }

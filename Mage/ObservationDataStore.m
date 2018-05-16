@@ -154,6 +154,8 @@
             break;
 			
         case NSFetchedResultsChangeUpdate:
+            NSLog(@"observation update");
+            NSLog(@"Changes %@", [anObject changedValues]);
             [tableView reloadRowsAtIndexPaths:[NSArray arrayWithObject:indexPath] withRowAnimation:UITableViewRowAnimationNone];
             break;
 			

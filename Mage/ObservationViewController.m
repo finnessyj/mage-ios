@@ -37,9 +37,11 @@
 @property (strong, nonatomic) NSString *variantField;
 @property (nonatomic, strong) NSFetchedResultsController *favoritesFetchedResultsController;
 @property (nonatomic, strong) NSFetchedResultsController *importantFetchedResultsController;
+@property (nonatomic, strong) NSFetchedResultsController *observationFetchedResultsController;
 @property (nonatomic, strong) NSArray *forms;
 @property (nonatomic, strong) NSArray *observationForms;
 @property (nonatomic, strong) NSMutableArray *childCoordinators;
+@property (nonatomic, strong) NSDate *attachmentsLastChanged;
 @end
 
 @implementation ObservationViewController
@@ -115,10 +117,20 @@ static NSInteger const IMPORTANT_SECTION = 4;
 
 
 - (void) setupObservation {
+    self.attachmentsLastChanged = self.observation.attachmentsLastUpdated != nil ? self.observation.attachmentsLastUpdated : [NSDate date];
     self.observationForms = [self.observation.properties objectForKey:@"forms"];
     
     self.manualSync = NO;
     self.tableLayout = [[NSMutableArray alloc] initWithCapacity:NUMBER_OF_SECTIONS];
+    
+    self.observationFetchedResultsController = [Observation MR_fetchAllSortedBy:@"timestamp"
+                                                                      ascending:NO
+                                                                  withPredicate:[NSPredicate predicateWithFormat:@"self == %@", self.observation]
+                                                                        groupBy:nil
+                                                                       delegate:self
+                                                                      inContext:[NSManagedObjectContext MR_defaultContext]];
+    NSError *error;
+    [self.observationFetchedResultsController performFetch:&error];
     
     self.favoritesFetchedResultsController = [ObservationFavorite MR_fetchAllSortedBy:@"observation.timestamp"
                                                                             ascending:NO
@@ -164,6 +176,9 @@ static NSInteger const IMPORTANT_SECTION = 4;
 
     self.importantFetchedResultsController.delegate = nil;
     self.importantFetchedResultsController = nil;
+    
+    self.observationFetchedResultsController.delegate = nil;
+    self.observationFetchedResultsController = nil;
 
     [[ObservationPushService singleton] removeObservationPushDelegate:self];
 }
@@ -579,6 +594,13 @@ static NSInteger const IMPORTANT_SECTION = 4;
 }
 
 - (void)controller:(NSFetchedResultsController *)controller didChangeObject:(id) anObject atIndexPath:(NSIndexPath *) indexPath forChangeType:(NSFetchedResultsChangeType)type newIndexPath:(NSIndexPath *) newIndexPath {
+    if ([anObject isKindOfClass:[Observation class]]) {
+        if ([self.observation.attachmentsLastUpdated isLaterThan:self.attachmentsLastChanged]) {
+            [self.propertyTable reloadSections:[NSIndexSet indexSetWithIndex:ATTACHMENT_SECTION] withRowAnimation:UITableViewRowAnimationNone];
+        }
+        return;
+    }
+    
     [[NSManagedObjectContext MR_defaultContext] refreshObject:self.observation mergeChanges:YES];
 
     if ([anObject isKindOfClass:[ObservationFavorite class]]) {
@@ -586,6 +608,7 @@ static NSInteger const IMPORTANT_SECTION = 4;
     } else if ([anObject isKindOfClass:[ObservationImportant class]]) {
         [self updateImportant];
     }
+
 }
 
 - (void) didPushObservation:(Observation *) observation success:(BOOL) success error:(NSError *) error {

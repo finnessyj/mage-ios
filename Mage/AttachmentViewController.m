@@ -5,6 +5,7 @@
 //
 
 #import "AttachmentViewController.h"
+#import "AttachmentPushService.h"
 #import "FICImageCache.h"
 #import "AppDelegate.h"
 #import "MageSessionManager.h"
@@ -13,8 +14,9 @@
 #import <AVFoundation/AVFoundation.h>
 #import <AVKit/AVKit.h>
 #import <AFNetworking/UIImageView+AFNetworking.h>
+#import "Theme+UIResponder.h"
 
-@interface AttachmentViewController () <AVAudioPlayerDelegate>
+@interface AttachmentViewController () <AVAudioPlayerDelegate, NSFetchedResultsControllerDelegate>
 
 @property (strong, nonatomic) AVAudioPlayer *audioPlayer;
 @property (weak, nonatomic) IBOutlet UIActivityIndicatorView *imageActivityIndicator;
@@ -25,10 +27,26 @@
 @property (weak, nonatomic) IBOutlet UILabel *progressPercentLabel;
 @property (weak, nonatomic) IBOutlet UIProgressView *downloadProgressBar;
 @property (strong, nonatomic) AVPlayerViewController *playerViewController;
+@property (weak, nonatomic) IBOutlet UIStackView *stackView;
+@property (weak, nonatomic) IBOutlet UIProgressView *uploadProgressView;
+@property (weak, nonatomic) IBOutlet UIButton *uploadButton;
+@property (weak, nonatomic) IBOutlet UILabel *uploadStatusLabel;
+@property (strong, nonatomic) NSFetchedResultsController *attachmentFetchedResultsController;
 
 @end
 
-@implementation AttachmentViewController
+@implementation AttachmentViewController {
+    BOOL manualSync;
+}
+
+- (void) themeDidChange:(MageTheme)theme {
+    self.uploadButton.backgroundColor = [UIColor primary];
+    self.uploadButton.tintColor = [UIColor navBarPrimaryText];
+    self.uploadStatusLabel.textColor = [UIColor primary];
+    self.uploadStatusLabel.backgroundColor = [UIColor background];
+    self.uploadProgressView.tintColor = [UIColor primary];
+    self.stackView.backgroundColor = [UIColor background];
+}
 
 - (instancetype) initWithMediaURL: (NSURL *) mediaURL andContentType: (NSString *) contentType andTitle: (NSString *) title {
     self = [super initWithNibName:@"AttachmentView" bundle:nil];
@@ -44,14 +62,27 @@
     self = [super initWithNibName:@"AttachmentView" bundle:nil];
     if (self != nil) {
         self.attachment = attachment;
+        [self setupFetchedResultsController];
     }
     return self;
+}
+
+- (void) setupFetchedResultsController {
+    manualSync = NO;
+    self.attachmentFetchedResultsController = [Attachment MR_fetchAllSortedBy:@"name"
+                                                                    ascending:NO
+                                                                withPredicate:[NSPredicate predicateWithFormat:@"self == %@", self.attachment]
+                                                                      groupBy:nil
+                                                                     delegate:self
+                                                                    inContext:[NSManagedObjectContext MR_defaultContext]];
 }
 
 - (void)viewDidLoad {
     [super viewDidLoad];
     
     [self.navigationController setNavigationBarHidden:NO];
+    
+    [self registerForThemeChanges];
     
     if (self.mediaUrl != nil) {
         if ([self.contentType hasPrefix:@"image"]) {
@@ -99,11 +130,20 @@
     if (self.attachment == attachment) return;
     
     self.attachment = attachment;
+    [self setupFetchedResultsController];
     [self cleanup];
     [self showAttachment];
 }
 
+- (IBAction)manualPushTouched:(id)sender {
+    manualSync = YES;
+    [[AttachmentPushService singleton] pushAttachments:@[self.attachment]];
+    [self.uploadButton setHidden:YES];
+    self.uploadStatusLabel.text = @"Attachment has been scheduled to be pushed";
+}
+
 - (void) showAttachment {
+
     if ([self.attachment.contentType hasPrefix:@"image"]) {
         [self.imageViewHolder setHidden:NO];
         [self.progressView setHidden:YES];
@@ -125,6 +165,24 @@
         
         [self downloadAndPlayAttachment:self.attachment];
     }
+    if (self.attachment.uploading) {
+        self.uploadStatusLabel.text = [NSString stringWithFormat:@"Currently Uploading %@%%", self.attachment.uploadProgress];
+        [self.uploadProgressView setProgress:[self.attachment.uploadProgress floatValue] / 100.0f animated:YES];
+    } else if (self.attachment.uploadStatus != nil && !manualSync) {
+        self.uploadStatusLabel.text = self.attachment.uploadStatus;
+        self.uploadProgressView.hidden = YES;
+        NSNumber *dirty = self.attachment.dirty;
+        
+        [self.uploadButton setHidden:![dirty boolValue]];
+    } else if (manualSync) {
+        self.uploadStatusLabel.text = @"Attachment has been scheduled to be pushed";
+    } else {
+        self.uploadStatusLabel.text = @"";
+    }
+}
+
+- (void)controller:(NSFetchedResultsController *)controller didChangeObject:(id) anObject atIndexPath:(NSIndexPath *) indexPath forChangeType:(NSFetchedResultsChangeType)type newIndexPath:(NSIndexPath *) newIndexPath {
+    [self showAttachment];
 }
 
 -(void) downloadAndPlayAttachment:(Attachment *) attachment {

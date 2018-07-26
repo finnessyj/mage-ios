@@ -213,17 +213,17 @@
     __weak typeof(self) weakSelf = self;
     
     self.observation.user = [User fetchCurrentUserInManagedObjectContext:self.managedObjectContext];
-    
+        
     [self.managedObjectContext MR_saveToPersistentStoreWithCompletion:^(BOOL contextDidSave, NSError *error) {
         if (!contextDidSave) {
-            NSLog(@"Error saving observation to persistent store, context did not save");
+            NSLog(@"DUPLICATE TEST: Error saving observation to persistent store, context did not save");
         }
         
         if (error) {
-            NSLog(@"Error saving observation to persistent store %@", error);
+            NSLog(@"DUPLICATE TEST: Error saving observation to persistent store %@", error);
         }
         
-        NSLog(@"saved the observation: %@", weakSelf.observation.remoteId);
+        NSLog(@"DUPLICATE TEST: Saved the observation: %@", weakSelf.observation.remoteId);
         
         [weakSelf.delegate editComplete:weakSelf.observation];
         

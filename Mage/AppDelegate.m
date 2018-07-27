@@ -50,18 +50,57 @@
 @property (nonatomic, strong) MageAppCoordinator *appCoordinator;
 @property (nonatomic, strong) UINavigationController *rootViewController;
 @property (nonatomic, strong) UIApplication *application;
+@property (nonatomic) BOOL applicationStarted;
 @end
 
 @implementation AppDelegate
 
+- (void) applicationProtectedDataDidBecomeAvailable:(UIApplication *)application {
+    NSLog(@"Application Protected Data Did Become Available");
+    if (!_applicationStarted) {
+        _applicationStarted = YES;
+        [self setupMageApplication:application];
+        [self startMageApp];
+    }
+}
+
 - (BOOL)application:(UIApplication *)application didFinishLaunchingWithOptions:(NSDictionary *)launchOptions {
-    [application setMinimumBackgroundFetchInterval:UIApplicationBackgroundFetchIntervalMinimum];
+    BOOL protectedDataAvailable = _applicationStarted = [application isProtectedDataAvailable];
     
     NSArray *paths = NSSearchPathForDirectoriesInDomains(NSDocumentDirectory,NSUserDomainMask, YES);
     NSString *documentsDirectory = [paths objectAtIndex:0];
-    NSString *fileName =[NSString stringWithFormat:@"%@.log",[NSDate date]];
+    NSDateFormatter *dateFormat = [[NSDateFormatter alloc] init];
+    [dateFormat setDateFormat:@"yyyy_MM_dd"];
+    NSString *fileName = [NSString stringWithFormat:@"%@.log", [dateFormat stringFromDate:[NSDate date]]];
+    NSLog(@"Writing to the file %@", fileName);
     NSString *logFilePath = [documentsDirectory stringByAppendingPathComponent:fileName];
     freopen([logFilePath cStringUsingEncoding:NSASCIIStringEncoding],"a+",stderr);
+    
+    NSLog(@"Protected data is available? %d", protectedDataAvailable);
+    
+    self.window = [[UIWindow alloc] initWithFrame: [UIScreen mainScreen].bounds];
+    [self.window makeKeyAndVisible];
+    self.window.backgroundColor = [UIColor background];
+    
+    [self createLoadingView];
+    if (protectedDataAvailable) {
+        [self setupMageApplication:application];
+        [self startMageApp];
+    } else {
+        UIAlertController *alert = [UIAlertController alertControllerWithTitle:@"Protected Data Not Available"
+                                                                       message:@"Protected Data Not Available"
+                                                                preferredStyle:UIAlertControllerStyleAlert];
+        
+        [alert addAction:[UIAlertAction actionWithTitle:@"OK" style:UIAlertActionStyleDefault handler:nil]];
+        
+        [self.rootViewController presentViewController:alert animated:YES completion:nil];
+    }
+    
+    return YES;
+}
+
+- (void) setupMageApplication: (UIApplication *) application {
+    [application setMinimumBackgroundFetchInterval:UIApplicationBackgroundFetchIntervalMinimum];
     
     [[AFNetworkActivityIndicatorManager sharedManager] setEnabled:YES];
     
@@ -83,13 +122,7 @@
     NSUInteger count = [MageOfflineObservationManager offlineObservationCount];
     NSLog(@"Offline count %lu", (unsigned long)count);
     
-    self.window = [[UIWindow alloc] initWithFrame: [UIScreen mainScreen].bounds];
-    [self.window makeKeyAndVisible];
-    self.window.backgroundColor = [UIColor background];
-
-    [self createRootView];
-    
-	return YES;
+    [self startMageApp];
 }
 
 - (void) geoPackageDownloaded: (NSNotification *) notification {
@@ -108,8 +141,8 @@
     NSLog(@"URL %@", url);
     if ([[url scheme] hasPrefix:@"com.googleusercontent.apps"]) {
         return [[GIDSignIn sharedInstance] handleURL:url
-                               sourceApplication:options[UIApplicationOpenURLOptionsSourceApplicationKey]
-                                      annotation:options[UIApplicationOpenURLOptionsAnnotationKey]];
+                                   sourceApplication:options[UIApplicationOpenURLOptionsSourceApplicationKey]
+                                          annotation:options[UIApplicationOpenURLOptionsAnnotationKey]];
     } else if (url.isFileURL) {
         NSString * fileUrl = [url path];
         
@@ -131,14 +164,22 @@
     return YES;
 }
 
-- (void) createRootView {
+- (void) createLoadingView {
     self.rootViewController = [[UINavigationController alloc] init];
     self.rootViewController.navigationBarHidden = YES;
     [self.window setRootViewController:self.rootViewController];
     TransitionViewController *transitionView = [[TransitionViewController alloc] initWithNibName:@"TransitionScreen" bundle:nil];
     [self.rootViewController pushViewController:transitionView animated:NO];
+}
+
+- (void) startMageApp {
     self.appCoordinator = [[MageAppCoordinator alloc] initWithNavigationController:self.rootViewController forApplication:self.application];
     [self.appCoordinator start];
+}
+
+- (void) createRootView {
+    [self createLoadingView];
+    [self startMageApp];
 }
 
 - (void) chooseEvent {
@@ -174,7 +215,7 @@
 
 - (void) applicationDidEnterBackground:(UIApplication *) application {
     NSLog(@"applicationDidEnterBackground");
-
+    
     self.splashView = [[TransitionViewController alloc] initWithNibName:@"TransitionScreen" bundle:nil];
     self.splashView.view.frame = [self.window frame];
     [self.window addSubview:self.splashView.view];
@@ -302,7 +343,7 @@
             // Make sure the GeoPackage file exists
             NSString * filePath = [manager documentsPathForDatabase:geoPackage];
             if(filePath != nil && [[NSFileManager defaultManager] fileExistsAtPath:filePath]){
-            
+                
                 GeoPackageCacheOverlay * cacheOverlay = [self getGeoPackageCacheOverlayWithManager:manager andName:geoPackage];
                 if(cacheOverlay != nil){
                     [cacheOverlays addObject:cacheOverlay];
@@ -436,7 +477,7 @@
 
 - (void) applicationWillTerminate:(UIApplication *) application {
     NSLog(@"applicationWillTerminate");
-
+    
     [MagicalRecord cleanUp];
 }
 
@@ -522,3 +563,4 @@
 }
 
 @end
+

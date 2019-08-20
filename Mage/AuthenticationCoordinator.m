@@ -7,11 +7,12 @@
 //
 
 #import "AuthenticationCoordinator.h"
+#import "Authentication.h"
 #import "LoginViewController.h"
 #import "SignUpViewController.h"
 #import "GoogleSignUpViewController.h"
-#import "OAuthLoginView.h"
-#import "OAuthViewController.h"
+#import "IdpLoginView.h"
+#import "IdpViewController.h"
 #import "DisclaimerViewController.h"
 #import "MageServer.h"
 #import "Server.h"
@@ -27,7 +28,7 @@
 #import "AppDelegate.h"
 #import "Authentication.h"
 
-@interface AuthenticationCoordinator() <LoginDelegate, DisclaimerDelegate, ServerURLDelegate, GIDSignInDelegate, SignUpDelegate, OAuthButtonDelegate>
+@interface AuthenticationCoordinator() <LoginDelegate, DisclaimerDelegate, ServerURLDelegate, GIDSignInDelegate, SignUpDelegate, IdpButtonDelegate>
 
 @property (strong, nonatomic) UINavigationController *navigationController;
 @property (strong, nonatomic) MageServer *server;
@@ -163,8 +164,9 @@ BOOL signingIn = YES;
 - (void) signinForStrategy:(NSDictionary *)strategy {
     NSString *url = [NSString stringWithFormat:@"%@/auth/%@/signin", [[MageServer baseURL] absoluteString], [strategy objectForKey:@"identifier"]];
     
-    OAuthViewController *ovc = [[OAuthViewController alloc] initWithUrl:url andAuthenticationType:OAUTH2 andRequestType:SIGNIN andStrategy: strategy andLoginDelegate: self];
-    [self.navigationController pushViewController:ovc animated:YES];
+    AuthenticationType type = [Authentication authenticationTypeFromString:[strategy valueForKeyPath:@"strategy.type"]];
+    IdpViewController *vc = [[IdpViewController alloc] initWithUrl:url andAuthenticationType:type andRequestType:SIGNIN andStrategy: strategy andLoginDelegate: self];
+    [self.navigationController pushViewController:vc animated:YES];
 }
 
 - (void) startLoginOnly {

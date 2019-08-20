@@ -6,17 +6,17 @@
 //  Copyright © 2018 National Geospatial Intelligence Agency. All rights reserved.
 //
 
-#import "OAuthLoginView.h"
+#import "IdpLoginView.h"
 #import "Theme+UIResponder.h"
 #import "AuthenticationButton.h"
 
 @import HexColors;
 
-@interface OAuthLoginView()<AuthenticationButtonDelegate>
+@interface IdpLoginView()<AuthenticationButtonDelegate>
 @property (weak, nonatomic) IBOutlet AuthenticationButton *authenticationButton;
 @end
 
-@implementation OAuthLoginView
+@implementation IdpLoginView
 
 - (void) themeDidChange:(MageTheme)theme {
     

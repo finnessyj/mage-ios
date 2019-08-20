@@ -8,8 +8,8 @@
 #import "UINextField.h"
 #import "MageSessionManager.h"
 #import "MageServer.h"
-#import "OAuthViewController.h"
-#import "OAuthAuthentication.h"
+#import "IdpViewController.h"
+#import "IdpAuthentication.h"
 #import "NBAsYouTypeFormatter.h"
 #import "ServerAuthentication.h"
 
@@ -192,7 +192,7 @@
 
 - (void)prepareForSegue:(UIStoryboardSegue *)segue sender:(id)sender {
     if([[segue identifier] isEqualToString:@"OAuthSegue"]) {
-        OAuthViewController *viewController = [segue destinationViewController];
+        IdpViewController *viewController = [segue destinationViewController];
         NSString *url = [NSString stringWithFormat:@"%@/%@", [[MageServer baseURL] absoluteString], @"auth/google/signup"];
         [viewController setUrl:url];
         [viewController setAuthenticationType:GOOGLE];

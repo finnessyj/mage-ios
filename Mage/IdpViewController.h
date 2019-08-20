@@ -8,10 +8,10 @@
 
 #import <UIKit/UIKit.h>
 #import "MageServer.h"
-#import "OAuthAuthentication.h"
+#import "IdpAuthentication.h"
 #import "LoginViewController.h"
 
-@interface OAuthViewController : UIViewController
+@interface IdpViewController : UIViewController
 
 @property (strong, nonatomic) NSString *url;
 @property (strong, nonatomic) MageServer *server;

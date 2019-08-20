@@ -6,18 +6,18 @@
 //  Copyright © 2015 National Geospatial Intelligence Agency. All rights reserved.
 //
 
-#import "OAuthViewController.h"
+#import "IdpViewController.h"
 #import <WebKit/WebKit.h>
 #import "DeviceUUID.h"
 #import "UserUtility.h"
 
-@interface OAuthViewController()<WKNavigationDelegate>
+@interface IdpViewController()<WKNavigationDelegate>
 @property (strong, nonatomic) WKWebView *webView;
 @property (nonatomic) UIProgressView *progressView;
 @property (strong, nonatomic) id<LoginDelegate> delegate;
 @end
 
-@implementation OAuthViewController
+@implementation IdpViewController
 
 - (instancetype) initWithUrl: (NSString *) url andAuthenticationType: (AuthenticationType) authenticationType andRequestType: (OAuthRequestType) requestType andStrategy:(NSDictionary *)strategy andLoginDelegate:(id<LoginDelegate>)delegate {
     if (self = [super init]) {

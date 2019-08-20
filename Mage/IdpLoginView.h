@@ -8,15 +8,15 @@
 
 #import <UIKit/UIKit.h>
 
-@protocol OAuthButtonDelegate <NSObject>
+@protocol IdpButtonDelegate <NSObject>
 
 - (void) signinForStrategy: (NSDictionary *) strategy;
 
 @end
 
-@interface OAuthLoginView : UIStackView
+@interface IdpLoginView : UIStackView
 
 @property (strong, nonatomic) NSDictionary *strategy;
-@property (strong, nonatomic) id<OAuthButtonDelegate> delegate;
+@property (strong, nonatomic) id<IdpButtonDelegate> delegate;
 
 @end

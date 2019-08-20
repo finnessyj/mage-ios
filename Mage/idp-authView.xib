@@ -11,7 +11,7 @@
     <objects>
         <placeholder placeholderIdentifier="IBFilesOwner" id="-1" userLabel="File's Owner"/>
         <placeholder placeholderIdentifier="IBFirstResponder" id="-2" customClass="UIResponder"/>
-        <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" id="Jk5-66-9t7" customClass="OAuthLoginView">
+        <stackView opaque="NO" contentMode="scaleToFill" axis="vertical" id="Jk5-66-9t7" customClass="IdpLoginView">
             <rect key="frame" x="0.0" y="0.0" width="342" height="40"/>
             <autoresizingMask key="autoresizingMask" flexibleMaxY="YES"/>
             <subviews>

@@ -16,7 +16,7 @@
 #import "DeviceUUID.h"
 #import <GoogleSignIn/GoogleSignIn.h>
 #import "Theme+UIResponder.h"
-#import "OAuthLoginView.h"
+#import "IdpLoginView.h"
 #import "LocalLoginView.h"
 #import "LdapLoginView.h"
 #import "OrView.h"
@@ -34,7 +34,7 @@
 @property (weak, nonatomic) IBOutlet UIView *signupContainerView;
 @property (strong, nonatomic) MageServer *server;
 @property (nonatomic) BOOL loginFailure;
-@property (strong, nonatomic) id<LoginDelegate, OAuthButtonDelegate> delegate;
+@property (strong, nonatomic) id<LoginDelegate, IdpButtonDelegate> delegate;
 @property (weak, nonatomic) IBOutlet GIDSignInButton *googleSignInButton;
 @property (strong, nonatomic) User *user;
 @property (weak, nonatomic) IBOutlet UIStackView *loginsStackView;
@@ -43,7 +43,7 @@
 
 @implementation LoginViewController
 
-- (instancetype) initWithMageServer: (MageServer *) server andDelegate:(id<LoginDelegate, OAuthButtonDelegate>) delegate {
+- (instancetype) initWithMageServer: (MageServer *) server andDelegate:(id<LoginDelegate, IdpButtonDelegate>) delegate {
     self = [super initWithNibName:@"LoginView" bundle:nil];
     if (!self) return nil;
     
@@ -154,8 +154,13 @@
             view.strategy = strategy;
             view.delegate = self.delegate;
             [self.loginsStackView addArrangedSubview:view];
-        } else {
-            OAuthLoginView *view = [[[UINib nibWithNibName:@"oauth-authView" bundle:nil] instantiateWithOwner:self options:nil] objectAtIndex:0];
+        } else if ([[strategy valueForKey:@"identifier"] isEqualToString:@"saml"]) {
+            IdpLoginView *view = [[[UINib nibWithNibName:@"idp-authView" bundle:nil] instantiateWithOwner:self options:nil] objectAtIndex:0];
+            view.strategy = strategy;
+            view.delegate = self.delegate;
+            [self.loginsStackView addArrangedSubview:view];
+        } else if ([[strategy valueForKey:@"identifier"] isEqualToString:@"oauth"]){
+            IdpLoginView *view = [[[UINib nibWithNibName:@"idp-authView" bundle:nil] instantiateWithOwner:self options:nil] objectAtIndex:0];
             view.strategy = strategy;
             view.delegate = self.delegate;
             [self.loginsStackView addArrangedSubview:view];
